@@ -69,6 +69,44 @@ func (s Session) sidKey() string {
 	return "SessionId"
 }
 
+func (s Session) MustSign(claims map[string]interface{}) string {
+	token, err := s.Sign(claims)
+	if err != nil {
+		panic(err)
+	}
+	return token
+}
+
+func (s Session) Sign(claims map[string]interface{}) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
+	return token.SignedString(s.Keys.PrivateKey)
+}
+
+func (s Session) MustParse(token string) map[string]interface{} {
+	claims, err := s.Parse(token)
+	if err != nil {
+		panic(err)
+	}
+	return claims
+}
+
+func (s Session) Parse(tokenString string) (map[string]interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return s.Keys.PublicKey, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+	return claims, nil
+}
+
 func (s Session) GenerateAuthorization(userId int, sessionId string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		s.uidKey(): userId,

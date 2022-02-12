@@ -22,4 +22,11 @@ func Test(t *testing.T) {
 	if sessionId != expectedSid {
 		t.Error("session id should be equal")
 	}
+	token := sess.MustSign(map[string]interface{}{
+		"Foo": "Bar",
+	})
+	claims := sess.MustParse(token)
+	if claims["Foo"].(string) != "Bar" {
+		t.Error("map value not match")
+	}
 }
