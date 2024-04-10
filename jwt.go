@@ -133,13 +133,21 @@ func (s Session) ParseAuthorization(auth string) (userId int, sessionId string, 
 	if !ok {
 		return
 	}
-	sid, ok = claims[s.sidKey()]
-	if !ok {
+	switch v := uid.(type) {
+	case float64:
+		userId = int(v)
+	case string:
+		userId, e = strconv.Atoi(v)
+		if e != nil {
+			ok = false
+			return
+		}
+	default:
+		ok = false
 		return
 	}
-	userId, e = strconv.Atoi(fmt.Sprint(uid))
-	if e != nil {
-		ok = false
+	sid, ok = claims[s.sidKey()]
+	if !ok {
 		return
 	}
 	sessionId = fmt.Sprint(sid)

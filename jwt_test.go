@@ -5,7 +5,7 @@ import (
 )
 
 func Test(t *testing.T) {
-	expectedUid := 1
+	expectedUid := 100000001
 	expectedSid := "381063e6-4dd1-40bf-a2c0-8b40f4d8db68"
 	sess := NewSession(nil)
 	auth, err := sess.GenerateAuthorization(expectedUid, expectedSid)
