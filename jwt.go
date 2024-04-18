@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -107,7 +106,7 @@ func (s Session) Parse(tokenString string) (map[string]interface{}, error) {
 	return claims, nil
 }
 
-func (s Session) GenerateAuthorization(userId int, sessionId string) (string, error) {
+func (s Session) GenerateAuthorization(userId, sessionId string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		s.uidKey(): userId,
 		s.sidKey(): sessionId,
@@ -119,7 +118,7 @@ func (s Session) GenerateAuthorization(userId int, sessionId string) (string, er
 	return "Bearer " + auth, nil
 }
 
-func (s Session) ParseAuthorization(auth string) (userId int, sessionId string, ok bool) {
+func (s Session) ParseAuthorization(auth string) (userId, sessionId string, ok bool) {
 	parts := strings.SplitN(auth, " ", 2)
 	if parts[0] != "Bearer" {
 		return
@@ -134,14 +133,8 @@ func (s Session) ParseAuthorization(auth string) (userId int, sessionId string, 
 		return
 	}
 	switch v := uid.(type) {
-	case float64:
-		userId = int(v)
 	case string:
-		userId, e = strconv.Atoi(v)
-		if e != nil {
-			ok = false
-			return
-		}
+		userId = v
 	default:
 		ok = false
 		return
@@ -150,7 +143,13 @@ func (s Session) ParseAuthorization(auth string) (userId int, sessionId string, 
 	if !ok {
 		return
 	}
-	sessionId = fmt.Sprint(sid)
+	switch v := sid.(type) {
+	case string:
+		sessionId = v
+	default:
+		ok = false
+		return
+	}
 	ok = true
 	return
 }
